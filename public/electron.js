@@ -11,10 +11,11 @@ function createWindow () {
   // Create the browser window.
   mainWindow = new BrowserWindow({
     width: 800,
-    height: 600
-    // webPreferences: {
-    //   preload: path.join(__dirname, 'preload.js')
-    // }
+    height: 600,
+    webPreferences: {
+      // preload: path.join(__dirname, 'preload.js')
+      nodeIntegration: true
+    }
   })
 
   // mainWindow.removeMenu()
@@ -28,6 +29,12 @@ function createWindow () {
 
   // Open the DevTools.
   // mainWindow.webContents.openDevTools()
+
+  // let webContents = mainWindow.webContents;
+  // webContents.on('new-window', function(event, url){
+  //   event.preventDefault();
+  //   shell.openExternal(url);
+  // });
 
   // Emitted when the window is closed.
   mainWindow.on('closed', function () {
