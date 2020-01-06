@@ -1,5 +1,5 @@
 // Modules to control application life and create native browser window
-const {app, BrowserWindow} = require('electron')
+const {shell, app, BrowserWindow} = require('electron')
 const path = require('path')
 const isDev = require('electron-is-dev')
 
@@ -30,11 +30,11 @@ function createWindow () {
   // Open the DevTools.
   // mainWindow.webContents.openDevTools()
 
-  // let webContents = mainWindow.webContents;
-  // webContents.on('new-window', function(event, url){
-  //   event.preventDefault();
-  //   shell.openExternal(url);
-  // });
+  let webContents = mainWindow.webContents;
+  webContents.on('new-window', function(event, url){
+    event.preventDefault();
+    shell.openExternal(url);
+  });
 
   // Emitted when the window is closed.
   mainWindow.on('closed', function () {

@@ -1,0 +1,11 @@
+.Error {
+    background: red;
+    padding: 0.5em;
+    display: relative;
+}
+
+.button {
+    position: absolute;
+    right: 0;
+    top: 0;
+}

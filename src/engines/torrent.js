@@ -11,6 +11,7 @@ class Torrent {
       downloads: null,
       category: null,
       hasDetails: false,
+      size: null,
     };
     Object.assign(this, defaults, args);
     this.fetching = false;
