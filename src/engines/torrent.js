@@ -1,25 +1,33 @@
 class Torrent {
   constructor(args) {
     let defaults = {
+      // general data
       name: null,
       magnet: null,
-      description: null,
       url: null,
       seeders: null,
       leachers: null,
       date: null,
       downloads: null,
       category: null,
-      hasDetails: false,
       size: null,
+
+      // status variable, don't set this!
+      fetching: false,
+
+      // other data that can only be non-null if hasDetails is true
+      hasDetails: false,
+      description: null,
+      files: null,
+      comments: null,
     };
     Object.assign(this, defaults, args);
-    this.fetching = false;
+
   }
 
   clone() {
     let t = new Torrent(this);
-    t.fetching = this.fetching;
+    // TODO: copy files och comments
     return t;
   }
 }

@@ -85,54 +85,105 @@ class SearchEngine extends React.Component {
             }
           </div>
         </div>
-        <div>
-          {this.state.maxPage === 0 && <div>There are no results</div>}
-          {!this.state.folded &&
-           this.state.torrents.map((t, i) => <TorrentView
-                                               key={i}
-                                               torrent={t}
-                                               fetchDetails={() => this.fetchDetails.call(this, i)}
-                                             />)}
-        </div>
+        {!this.state.folded &&
+         <div className={styles.body}>
+           {this.state.maxPage === 0 && <div>There are no results</div>}
+           {this.state.torrents.map((t, i) => <TorrentView
+                                                       key={i}
+                                                       torrent={t}
+                                                       fetchDetails={() => this.fetchDetails.call(this, i)}
+                                           />)}
+         </div>
+        }
       </div>
     );
   }
 }
 
-function TorrentView(props) {
-  const datestring = new Date(props.torrent.date).toLocaleDateString("sv-SE");
-  return (
-    <div>
-      <div className={styles.torrentHead}>
-        <div className={styles.theadOpen}>
-          <a
-            href={props.torrent.url}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            link
-          </a>
-          {(!props.torrent.fetching && !props.torrent.hasDetails) &&
-           <button
-             onClick={props.fetchDetails}
-           >
-             more
-           </button>}
-        </div>
-        <BeatLoader size={7} loading={props.torrent.fetching} />
-        <div className={styles.theadTitle}>{props.torrent.name}</div>
-        <a href={props.torrent.magnet} className={styles.theadMagnet}>magnet</a>
-        <div className={styles.theadSeeders}>{props.torrent.seeders}/{props.torrent.leachers}</div>
-        <div className={styles.theadDate}>{datestring}</div>
-        <div className={styles.theadDownloads}>{props.torrent.downloads}</div>
-        <div className={styles.theadCategory}>{props.torrent.category}</div>
-        <div className={styles.theadSize}>{props.torrent.size}</div>
-      </div>
+class TorrentView extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      tabSelected: null
+    };
+    this.options = [
+      "Description",
+      "Files",
+      "Comments"
+    ];
+    this.disabled = [];
+  }
+
+  tabbarClick(i) {
+    if (!this.props.torrent.fetching && !this.props.torrent.hasDetails) {
+      this.props.fetchDetails();
+    } else if (this.props.torrent.hasDetails && !this.disabled[i]) {
+      this.setState(prev => prev.tabSelected === i ? {tabSelected: null} : {tabSelected: i});
+    }
+  }
+
+  render() {
+    // TODO: memoize?
+    this.disabled = [
+      this.props.torrent.description === null,
+      this.props.torrent.files === null,
+      this.props.torrent.comments === null
+    ];
+    const datestring = new Date(this.props.torrent.date).toLocaleDateString("sv-SE");
+
+    let tabbar;
+    if (this.props.torrent.fetching) {
+      tabbar = <span className={styles.tabbar}>
+                 <BeatLoader
+                   size={7}
+                   loading={this.props.torrent.fetching}
+                 />
+               </span>;
+    } else {
+      tabbar = <div className={styles.tabbar}>
+                 {this.options.map((s, i) =>
+                                   <div
+                                     onClick={() => this.tabbarClick(i)}
+                                     key={i}
+                                     className={[
+                                       this.state.tabSelected === i ?
+                                         styles.selected : "",
+                                       this.disabled[i] ?
+                                         styles.disabled : ""
+                                     ].join(" ")}>
+                                     {s}
+                                   </div>)
+                 }
+               </div>;
+    }
+
+    return (
       <div>
-        {props.torrent.description}
+        <div className={styles.torrentHead}>
+          {tabbar}
+          <div className={styles.theadOpen}>
+            <a
+              href={this.props.torrent.url}
+              target="_blank"
+              rel="noopener noreferrer">
+              link
+            </a>
+          </div>
+          <div className={styles.theadTitle}>{this.props.torrent.name}</div>
+          <a href={this.props.torrent.magnet} className={styles.theadMagnet}>magnet</a>
+          <div className={styles.theadSeeders}>
+            {this.props.torrent.downloads} : {this.props.torrent.seeders}/{this.props.torrent.leachers}
+          </div>
+          <div className={styles.theadDate}>{datestring}</div>
+          <div className={styles.theadCategory}>{this.props.torrent.category}</div>
+          <div className={styles.theadSize}>{this.props.torrent.size}</div>
+        </div>
+        <div>
+          {this.props.torrent.description}
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
 }
 
 export default SearchEngine;

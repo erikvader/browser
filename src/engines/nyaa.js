@@ -121,6 +121,8 @@ class Nyaa {
       throw new Error("torrent already has details");
     }
     await new Promise(r => setTimeout(r, 2000))
+    torrent.files = {};
+    torrent.description = "hej";
     torrent.hasDetails = true;
     return torrent;
   }
