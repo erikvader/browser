@@ -1,6 +1,4 @@
 import Torrent from './torrent.js';
-const nfetch = window.require("node-fetch");
-const fs = window.require("fs");
 
 // TODO: gör en generell basklass med allt gemensamt
 class Nyaa {
@@ -66,14 +64,16 @@ class Nyaa {
     this.page += 1;
     const fetchingURL = this.formatURL();
 
+    window.remote.getGlobal("shared").test = "hej";
+
     // TODO: stop reading dummy
-    // let resp = await nfetch(fetchingURL);
+    // let resp = await window.nfetch(fetchingURL);
     // if (!resp.ok) {
     //   console.error(resp);
     //   throw new Error(`fetch not ok for ${fetchingURL}`);
     // }
     // let text = await resp.text();
-    let text = await fs.readFileSync("nyaa.html");
+    let text = await window.fs.readFileSync("nyaa.html");
     await new Promise(r => setTimeout(r, 1000));
 
     let parser = new DOMParser();
