@@ -64,8 +64,6 @@ class Nyaa {
     this.page += 1;
     const fetchingURL = this.formatURL();
 
-    window.remote.getGlobal("shared").test = "hej";
-
     // TODO: stop reading dummy
     // let resp = await window.nfetch(fetchingURL);
     // if (!resp.ok) {
