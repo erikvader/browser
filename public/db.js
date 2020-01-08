@@ -1,6 +1,7 @@
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
+const url = require('url');
 
 const dbfile = "db.json";
 const xdgData = path.join(os.homedir(), ".local", "share", "torrentbrowser");
@@ -10,14 +11,12 @@ const initData = {
 };
 
 function readDB() {
-  let raw;
+  let json;
   if (!fs.existsSync(dbpath)) {
-    raw = initData;
+    json = initData;
   } else {
-    raw = fs.readFileSync(dbpath);
+    json = JSON.parse(fs.readFileSync(dbpath));
   }
-  let json = JSON.parse(raw);
-  json.seen = new Set(json.seen);
   return json;
 }
 
@@ -26,8 +25,17 @@ function saveDB(d) {
   if (!fs.existsSync(dbpath)) {
     fs.mkdirSync(xdgData, {recursive: true});
   }
-  d.seen = Array.from(d.seen.keys());
   fs.writeFileSync(dbpath, JSON.stringify(d));
 }
 
-module.exports = {readDB, saveDB};
+// TODO: kan tydligen finnas flera xt.1, xt.2 etc.
+function magnetTopic(magnet) {
+  const u = new URL(magnet);
+  const t = u.searchParams.get("xt");
+  if (t === null) {
+    throw new Error(`magnet ${magnet} didn't have a topic`);
+  }
+  return t;
+}
+
+module.exports = {readDB, saveDB, magnetTopic};

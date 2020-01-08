@@ -5,10 +5,10 @@ window.fs = require("fs");
 
 const {ipcRenderer} = require('electron');
 
-window.hasSeen = async function(arg) {
-  return await ipcRenderer.invoke("hasSeen", arg);
+window.hasSeen = async function(t) {
+  return await ipcRenderer.invoke("hasSeen", t.magnet, t.url, t.engine);
 }
 
-window.addSeen = function(arg) {
-  ipcRenderer.send("addSeen", arg);
+window.addSeen = function(t) {
+  ipcRenderer.send("addSeen", t.magnet, t.url, t.engine);
 }

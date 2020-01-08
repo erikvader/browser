@@ -4,22 +4,28 @@ class Torrent {
       // general data
       name: null,
       magnet: null,
-      url: null,
+      url: null,      // /dir/asd?a=5&b=3
+      baseUrl: null,  // http://website.com
+      engine: null,   // website
       seeders: null,
       leachers: null,
       date: null,
       downloads: null,
       category: null,
       size: null,
+      description: null,
+      files: null,
+      comments: null,
+      uploader: null,
 
       // status variable, don't set this!
       fetching: false,
 
-      // other data that can only be non-null if hasDetails is true
+      // whether we can fetch more general data or not
       hasDetails: false,
-      description: null,
-      files: null,
-      comments: null,
+
+      // set from file, don't set!
+      seen: false,
     };
     Object.assign(this, defaults, args);
 

@@ -3,15 +3,23 @@ const {shell, app, BrowserWindow} = require('electron')
 const path = require('path')
 const isDev = require('electron-is-dev')
 const {ipcMain} = require('electron');
-const {readDB, saveDB} = require('./db');
+const {readDB, saveDB, magnetTopic} = require('./db');
 
 let db = readDB();
-ipcMain.on("addSeen", (event, arg) => {
-  db.seen.add(arg);
+let magnets = new Set(db.seen.map(mue => magnetTopic(mue.magnet)));
+let urls = new Set(db.seen.map(mue => mue.engine + ":" + mue.url));
+
+ipcMain.on("addSeen", (event, magnet, url, engine) => {
+  db.seen.add({magnet, url, engine});
+  magnets.add(magnetTopic(magnet));
+  urls.add(engine + ":" + url);
 });
 
-ipcMain.handle("hasSeen", (event, arg) => {
-  return db.seen.has(arg);
+ipcMain.handle("hasSeen", (event, magnet, url, engine) => {
+  let res = {magnet: false, url: false};
+  res.magnet = magnets.has(magnetTopic(magnet));
+  res.url = urls.has(engine + ":" + url);
+  return res;
 });
 
 // Keep a global reference of the window object, if you don't, the window will

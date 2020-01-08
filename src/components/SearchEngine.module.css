@@ -1,72 +1,93 @@
 .engine {
+    position: relative;
+    margin-bottom: 10000px;
 }
 
 .head {
+    position: sticky;
+    top: 0;
     border: 1px solid gray;
-    border-radius: 5px 5px 0 0;
-    background: cyan;
-    padding: 10px;
-    display: grid;
-    /* grid-template-columns: 100px 70px auto; */
-    /* grid-template-rows: auto auto auto; */
-    grid-gap: 10px;
-    grid-template-areas:
-        "engine . ordering"
-        "search search search"
-        "next page .";
+    padding: 5px;
+    display: flex;
+    justify-content: space-between;
 }
 
 .body {
     border: 1px solid gray;
     border-radius: 0 0 5px 5px;
     padding: 5px;
+    border-width: 0 1px 1px 1px;
 }
 
 .headName {
-    grid-area: engine;
 }
 
 .headSearch {
-    grid-area: search;
 }
 
 .headOrdering {
-    grid-area: ordering;
 }
 
 .headPage {
-    grid-area: page;
 }
 
 .headNext {
-    grid-area: next;
+    text-align: center;
 }
 
 /* torrent *******************************************************************/
 
+.torrent {
+    margin-bottom: 3px;
+}
+
 .torrentHead {
     border: 1px solid gray;
     padding: 5px 0 0 0;
-    display: grid;
-    grid-template-columns: auto auto min-content min-content min-content;
-    grid-template-areas:
-        "title    title title title title"
-        "category category     . date  seeders"
-        "open     .     . size  magnet"
-        "tabbar tabbar tabbar tabbar tabbar";
-    grid-column-gap: 10px;
-    grid-row-gap: 10px;
     box-sizing: border-box;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+.torrentHead > * {
+    margin: 0 5px;
+}
+
+.torrentBody {
+    padding: 5px;
+    border-width: 0 1px 1px 1px;
+    border-color: gray;
+    border-style: solid;
+    border-radius: 0 0 5px 5px;
+}
+
+.noDetails {
+    border-style: dashed;
+}
+
+.moreBtn {
+    margin-right: 5px;
+    display: inline-block;
 }
 
 .tabbar {
-    grid-area: tabbar;
     display: flex;
+    width: 100%;
+    margin: 0 0;
+}
+
+.labelDisabled {
+    color: #666;
+}
+
+.label {
+    text-decoration: underline;
 }
 
 .tabbar > div.disabled {
-    opacity: 0.4;
     color: #aaaaaa;
+    cursor: default;
 }
 
 .tabbar > div {
@@ -83,47 +104,30 @@
 }
 
 .theadTitle {
-    grid-area: title;
-    padding-left: 5px;
-    padding-right: 5px;
+    width: 100%;
     word-break: break-all;
 }
 
+.theadUploader {
+}
+
 .theadCategory {
-    grid-area: category;
-    padding-left: 5px;
 }
 
 .theadSeeders {
-    grid-area: seeders;
-    justify-self: end;
     white-space: nowrap;
-    padding-right: 5px;
-}
-
-.theadOpen {
-    grid-area: open;
-    padding-left: 5px;
 }
 
 .theadSize {
-    grid-area: size;
     white-space: nowrap;
-    justify-self: end;
 }
 
 .theadMagnet {
-    grid-area: magnet;
-    justify-self: end;
-    padding-right: 5px;
 }
 
 .theadDownloads {
-    grid-area: downloads;
 }
 
 .theadDate {
-    grid-area: date;
     white-space: nowrap;
-    justify-self: end;
 }

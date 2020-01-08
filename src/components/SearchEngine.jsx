@@ -67,6 +67,7 @@ class SearchEngine extends React.Component {
         <div
           className={styles.head}
           onClick={() => this.setState(prev => ({folded: !prev.folded}))}
+          style={{background: this.props.engine.getBackground()}}
         >
           <div className={styles.headName}>{this.props.engine.getName()}</div>
           <div className={styles.headSearch}>search: {this.props.engine.getSearch()}</div>
@@ -74,6 +75,15 @@ class SearchEngine extends React.Component {
           <div className={styles.headPage}>
             {this.state.curPage} / {this.state.maxPage === null ? "?" : this.state.maxPage}
           </div>
+        </div>
+        <div className={styles.body}
+             style={this.state.folded ? {display: "none"} : null}>
+          {this.state.maxPage === 0 && <div>There are no results</div>}
+          {this.state.torrents.map((t, i) => <TorrentView
+                                               key={i}
+                                               torrent={t}
+                                               fetchDetails={() => this.fetchDetails.call(this, i)}
+                                             />)}
           <div className={styles.headNext}>
             <BeatLoader size={7} loading={this.state.fetchingPages} />
             {!this.state.fetchingPages &&
@@ -85,16 +95,6 @@ class SearchEngine extends React.Component {
             }
           </div>
         </div>
-        {!this.state.folded &&
-         <div className={styles.body}>
-           {this.state.maxPage === 0 && <div>There are no results</div>}
-           {this.state.torrents.map((t, i) => <TorrentView
-                                                       key={i}
-                                                       torrent={t}
-                                                       fetchDetails={() => this.fetchDetails.call(this, i)}
-                                           />)}
-         </div>
-        }
       </div>
     );
   }
@@ -106,6 +106,7 @@ class TorrentView extends React.Component {
     this.state = {
       tabSelected: null
     };
+    this.descriptionRef = React.createRef();
     this.options = [
       "Description",
       "Files",
@@ -114,12 +115,27 @@ class TorrentView extends React.Component {
     this.disabled = [];
   }
 
-  tabbarClick(i) {
-    if (!this.props.torrent.fetching && !this.props.torrent.hasDetails) {
-      this.props.fetchDetails();
-    } else if (this.props.torrent.hasDetails && !this.disabled[i]) {
+  tabbarClick(event, i) {
+    if (!this.disabled[i]) {
       this.setState(prev => prev.tabSelected === i ? {tabSelected: null} : {tabSelected: i});
     }
+  }
+
+  updateContents() {
+    if (this.props.torrent.description !== null) {
+      this.descriptionRef.current.innerHTML = null;
+      for (const ele of this.props.torrent.description) {
+        this.descriptionRef.current.appendChild(ele);
+      }
+    }
+  }
+
+  componentDidMount() {
+    this.updateContents();
+  }
+
+  componentDidUpdate() {
+    this.updateContents();
   }
 
   render() {
@@ -131,59 +147,93 @@ class TorrentView extends React.Component {
     ];
     const datestring = new Date(this.props.torrent.date).toLocaleDateString("sv-SE");
 
-    let tabbar;
+    let moreBtn;
     if (this.props.torrent.fetching) {
-      tabbar = <span className={styles.tabbar}>
+      moreBtn = <span className={styles.moreBtn}>
                  <BeatLoader
                    size={7}
                    loading={this.props.torrent.fetching}
                  />
                </span>;
-    } else {
-      tabbar = <div className={styles.tabbar}>
-                 {this.options.map((s, i) =>
-                                   <div
-                                     onClick={() => this.tabbarClick(i)}
-                                     key={i}
-                                     className={[
-                                       this.state.tabSelected === i ?
-                                         styles.selected : "",
-                                       this.disabled[i] ?
-                                         styles.disabled : ""
-                                     ].join(" ")}>
-                                     {s}
-                                   </div>)
-                 }
-               </div>;
+    } else if (!this.props.torrent.fetching && !this.props.torrent.hasDetails) {
+      moreBtn = <button onClick={this.props.fetchDetails} className={styles.moreBtn}>more</button>;
     }
 
+    const noDetailsStyle = this.props.torrent.hasDetails ? " " : ` ${styles.noDetails} `;
+
     return (
-      <div>
-        <div className={styles.torrentHead}>
-          {tabbar}
-          <div className={styles.theadOpen}>
+      <div className={styles.torrent}>
+        <div className={styles.torrentHead + noDetailsStyle}>
+          <div className={styles.theadTitle}>
+            {moreBtn}
             <a
-              href={this.props.torrent.url}
+              href={this.props.torrent.baseUrl + this.props.torrent.url}
               target="_blank"
               rel="noopener noreferrer">
-              link
+              {this.props.torrent.name}
             </a>
           </div>
-          <div className={styles.theadTitle}>{this.props.torrent.name}</div>
-          <a href={this.props.torrent.magnet} className={styles.theadMagnet}>magnet</a>
-          <div className={styles.theadSeeders}>
-            {this.props.torrent.downloads} : {this.props.torrent.seeders}/{this.props.torrent.leachers}
+          <TorrEle className={styles.theadMagnet} label={this.props.torrent.magnet !== null ? "" : "Magnet"}>
+            {this.props.torrent.magnet !== null &&
+             <a href={this.props.torrent.magnet}>magnet</a>
+            }
+          </TorrEle>
+          <TorrEle className={styles.theadSeeders} label="Seeders">
+            {this.props.torrent.seeders}/{this.props.torrent.leachers}
+          </TorrEle>
+          <TorrEle className={styles.downloads} label="Downloads">
+            {this.props.torrent.downloads}
+          </TorrEle>
+          <TorrEle className={styles.theadUploader} label="Uploader">
+            {this.props.torrent.uploader}
+          </TorrEle>
+          <TorrEle className={styles.theadDate} label="Date">
+            {datestring}
+          </TorrEle>
+          <TorrEle className={styles.theadCategory} label="Category">
+            {this.props.torrent.category}
+          </TorrEle>
+          <TorrEle className={styles.theadSize} label="Size">
+            {this.props.torrent.size}
+          </TorrEle>
+          <div className={styles.tabbar}>
+            {this.options.map((s, i) =>
+                              <div
+                                onClick={e => this.tabbarClick(e, i)}
+                                key={i}
+                                className={[
+                                  this.state.tabSelected === i ?
+                                    styles.selected : "",
+                                  this.disabled[i] ?
+                                    styles.disabled : ""
+                                ].join(" ")}>
+                                {s}
+                              </div>)
+            }
           </div>
-          <div className={styles.theadDate}>{datestring}</div>
-          <div className={styles.theadCategory}>{this.props.torrent.category}</div>
-          <div className={styles.theadSize}>{this.props.torrent.size}</div>
         </div>
-        <div>
-          {this.props.torrent.description}
+        <div className={styles.torrentBody + noDetailsStyle}
+             style={this.state.tabSelected === null ? {display: "none"} : null}>
+          <div ref={this.descriptionRef}></div>
         </div>
       </div>
     );
   }
+}
+
+function TorrEle(props) {
+  let spanClasses = [styles.label];
+  if (props.children === null) {
+    spanClasses.push(styles.labelDisabled);
+  }
+  return (
+    <div className={props.className}>
+      <span className={spanClasses.join(" ")}>
+        {props.label}{props.label === "" ? "" : ": "}
+      </span>
+      {props.children}
+    </div>
+  );
 }
 
 export default SearchEngine;

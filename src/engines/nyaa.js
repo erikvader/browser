@@ -1,4 +1,5 @@
 import Torrent from './torrent.js';
+import {sanitizeNode} from './utils.js';
 
 // TODO: gör en generell basklass med allt gemensamt
 class Nyaa {
@@ -9,6 +10,7 @@ class Nyaa {
     this.page = 0;
     this.maxPage = null;
     this.baseUrl = "https://nyaa.si";
+    this.parser = new DOMParser();
   }
 
   formatURL() {
@@ -34,7 +36,11 @@ class Nyaa {
   }
 
   getName() {
-    return "Nyaa.si";
+    return "Nyaa";
+  }
+
+  getBackground() {
+    return "cyan";
   }
 
   getID() {
@@ -71,11 +77,10 @@ class Nyaa {
     //   throw new Error(`fetch not ok for ${fetchingURL}`);
     // }
     // let text = await resp.text();
-    let text = await window.fs.readFileSync("nyaa.html");
+    let text = window.fs.readFileSync("nyaa.html");
     await new Promise(r => setTimeout(r, 1000));
 
-    let parser = new DOMParser();
-    let doc = parser.parseFromString(text, 'text/html');
+    let doc = this.parser.parseFromString(text, 'text/html');
 
     if (this.maxPage === null) {
       const paginator = doc.getElementsByClassName("pagination");
@@ -98,7 +103,8 @@ class Nyaa {
       info.category = row.children[0].firstElementChild.title;
 
       const col1 = row.children[1].lastElementChild;
-      info.url = this.baseUrl + col1.getAttribute("href");
+      info.url = col1.getAttribute("href");
+      info.baseUrl = this.baseUrl
       info.name = col1.title;
 
       info.magnet = row.children[2].lastElementChild.href;
@@ -107,6 +113,9 @@ class Nyaa {
       info.seeders = row.children[5].innerText;
       info.leachers = row.children[6].innerText;
       info.downloads = row.children[7].innerText;
+
+      info.engine = this.getName();
+      info.seen = await window.hasSeen(info);
 
       torrents.push(new Torrent(info));
     }
@@ -119,8 +128,9 @@ class Nyaa {
       throw new Error("torrent already has details");
     }
     await new Promise(r => setTimeout(r, 2000))
-    torrent.files = {};
-    torrent.description = "hej";
+    let text = window.fs.readFileSync("nyaa_view.html");
+    let doc = this.parser.parseFromString(text, 'text/html');
+    torrent.description = [sanitizeNode(doc.getElementById("torrent-description"))];
     torrent.hasDetails = true;
     return torrent;
   }

@@ -1,7 +1,7 @@
 .Error {
     background: red;
     padding: 0.5em;
-    display: relative;
+    position: relative;
 }
 
 .button {
