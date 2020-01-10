@@ -66,7 +66,7 @@
     border-style: dashed;
 }
 
-.moreBtn {
+.titleSpinner {
     margin-right: 5px;
     display: inline-block;
 }
@@ -75,14 +75,19 @@
     display: flex;
     width: 100%;
     margin: 0 0;
+    margin-top: 0.5ex;
 }
 
 .labelDisabled {
     color: #666;
+    font-style: italic;
 }
 
 .label {
-    text-decoration: underline;
+}
+
+.property {
+    font-weight: lighter;
 }
 
 .tabbar > div.disabled {
@@ -106,6 +111,11 @@
 .theadTitle {
     width: 100%;
     word-break: break-all;
+    margin-bottom: 0.5ex;
+}
+
+.titleClickable {
+    cursor: pointer;
 }
 
 .theadUploader {

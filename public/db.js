@@ -1,10 +1,9 @@
 const path = require('path');
-const os = require('os');
 const fs = require('fs');
-const url = require('url');
+const {app} = require('electron');
 
 const dbfile = "db.json";
-const xdgData = path.join(os.homedir(), ".local", "share", "torrentbrowser");
+const xdgData = app.getPath('userData');
 const dbpath = path.join(xdgData, dbfile);
 const initData = {
   seen: []
@@ -20,12 +19,17 @@ function readDB() {
   return json;
 }
 
-// destroys d
 function saveDB(d) {
   if (!fs.existsSync(dbpath)) {
     fs.mkdirSync(xdgData, {recursive: true});
   }
   fs.writeFileSync(dbpath, JSON.stringify(d));
+}
+
+function backupDB() {
+  if (fs.existsSync(dbpath)) {
+    fs.copyFileSync(dbpath, dbpath + ".bak");
+  }
 }
 
 // TODO: kan tydligen finnas flera xt.1, xt.2 etc.
@@ -38,4 +42,4 @@ function magnetTopic(magnet) {
   return t;
 }
 
-module.exports = {readDB, saveDB, magnetTopic};
+module.exports = {backupDB, readDB, saveDB, magnetTopic};

@@ -1,6 +1,8 @@
 import React from 'react';
 import { BeatLoader } from 'react-spinners';
 import styles from './SearchEngine.module.css';
+import deluge from '../torrent_client/deluge.js';
+import memoize from 'memoize-one';
 
 class SearchEngine extends React.Component {
   constructor(props) {
@@ -83,6 +85,7 @@ class SearchEngine extends React.Component {
                                                key={i}
                                                torrent={t}
                                                fetchDetails={() => this.fetchDetails.call(this, i)}
+                                               deluge={this.props.deluge}
                                              />)}
           <div className={styles.headNext}>
             <BeatLoader size={7} loading={this.state.fetchingPages} />
@@ -107,21 +110,19 @@ class TorrentView extends React.Component {
       tabSelected: null
     };
     this.descriptionRef = React.createRef();
+    this.headerRef = React.createRef();
     this.options = [
       "Description",
       "Files",
       "Comments"
     ];
-    this.disabled = [];
   }
 
   tabbarClick(event, i) {
-    if (!this.disabled[i]) {
-      this.setState(prev => prev.tabSelected === i ? {tabSelected: null} : {tabSelected: i});
-    }
+    this.setState(prev => prev.tabSelected === i ? {tabSelected: null} : {tabSelected: i});
   }
 
-  updateContents() {
+  updateDescription() {
     if (this.props.torrent.description !== null) {
       this.descriptionRef.current.innerHTML = null;
       for (const ele of this.props.torrent.description) {
@@ -131,53 +132,83 @@ class TorrentView extends React.Component {
   }
 
   componentDidMount() {
-    this.updateContents();
+    this.updateDescription();
+    // TODO: do i need to cleanup this?
+    this.headerRef.current.addEventListener("contextmenu", e => {
+      e.preventDefault();
+      this.createContextMenu(
+        this.props.torrent.magnet,
+        this.props.deluge.latest
+      ).popup(window.remote.getCurrentWindow());
+    }, false);
   }
 
   componentDidUpdate() {
-    this.updateContents();
+    this.updateDescription();
   }
 
+  createContextMenu = memoize((magnet, latest) => {
+    const createItem = dir => ({
+      label: dir,
+      click: () => {
+        const newChoice = deluge.download(latest, dir);
+        if (newChoice !== null) this.props.deluge.set(newChoice);
+        // TODO: mark as seen
+      }
+    });
+    const menuItems = [
+      {
+        label: "Download (deluge)",
+        enabled: magnet !== null,
+        submenu: deluge.getChoices(latest)
+          .flatMap(l => [{type: "separator"}, ...l.map(createItem)])
+          .slice(1)
+      },
+      {
+        label: "Visit in browser",
+        click: () => window.remote.openExternal(this.props.torrent.baseUrl + this.props.torrent.url)
+      },
+      {type: "separator"},
+      {
+        label: "Mark as seen"
+      },
+      {
+        label: "Mark as unseen"
+      }
+    ];
+    return window.remote.Menu.buildFromTemplate(menuItems);
+  });
+
+  date = memoize(date => new Date(date).toLocaleDateString("sv-SE"));
+
   render() {
-    // TODO: memoize?
-    this.disabled = [
+    const disabled = [
       this.props.torrent.description === null,
       this.props.torrent.files === null,
       this.props.torrent.comments === null
     ];
-    const datestring = new Date(this.props.torrent.date).toLocaleDateString("sv-SE");
+    const datestring = this.date(this.props.torrent.date);
 
-    let moreBtn;
+    let spinner;
     if (this.props.torrent.fetching) {
-      moreBtn = <span className={styles.moreBtn}>
-                 <BeatLoader
-                   size={7}
-                   loading={this.props.torrent.fetching}
-                 />
-               </span>;
-    } else if (!this.props.torrent.fetching && !this.props.torrent.hasDetails) {
-      moreBtn = <button onClick={this.props.fetchDetails} className={styles.moreBtn}>more</button>;
+      spinner = <span className={styles.titleSpinner}>
+                  <BeatLoader
+                    size={7}
+                    loading={this.props.torrent.fetching}
+                  />
+                </span>;
     }
 
     const noDetailsStyle = this.props.torrent.hasDetails ? " " : ` ${styles.noDetails} `;
+    const clickableStyle = this.props.torrent.hasDetails ? " " : ` ${styles.titleClickable} `;
 
     return (
       <div className={styles.torrent}>
-        <div className={styles.torrentHead + noDetailsStyle}>
-          <div className={styles.theadTitle}>
-            {moreBtn}
-            <a
-              href={this.props.torrent.baseUrl + this.props.torrent.url}
-              target="_blank"
-              rel="noopener noreferrer">
-              {this.props.torrent.name}
-            </a>
+        <div className={styles.torrentHead + noDetailsStyle} ref={this.headerRef}>
+          <div className={styles.theadTitle + clickableStyle} onClick={this.props.fetchDetails}>
+            {spinner}
+            {this.props.torrent.name}
           </div>
-          <TorrEle className={styles.theadMagnet} label={this.props.torrent.magnet !== null ? "" : "Magnet"}>
-            {this.props.torrent.magnet !== null &&
-             <a href={this.props.torrent.magnet}>magnet</a>
-            }
-          </TorrEle>
           <TorrEle className={styles.theadSeeders} label="Seeders">
             {this.props.torrent.seeders}/{this.props.torrent.leachers}
           </TorrEle>
@@ -199,12 +230,12 @@ class TorrentView extends React.Component {
           <div className={styles.tabbar}>
             {this.options.map((s, i) =>
                               <div
-                                onClick={e => this.tabbarClick(e, i)}
+                                onClick={e => disabled[i] || this.tabbarClick(e, i)}
                                 key={i}
                                 className={[
                                   this.state.tabSelected === i ?
                                     styles.selected : "",
-                                  this.disabled[i] ?
+                                  disabled[i] ?
                                     styles.disabled : ""
                                 ].join(" ")}>
                                 {s}
@@ -231,7 +262,9 @@ function TorrEle(props) {
       <span className={spanClasses.join(" ")}>
         {props.label}{props.label === "" ? "" : ": "}
       </span>
-      {props.children}
+      <span className={styles.property}>
+        {props.children}
+      </span>
     </div>
   );
 }

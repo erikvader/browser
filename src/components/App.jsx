@@ -17,8 +17,13 @@ class App extends React.Component {
       engines: [],
       engineID: 0,
       search: "a", // TODO: remove this
-      selectedEng: "nyaa.si"
+      selectedEng: "nyaa.si",
+      delugeLatest: null
     };
+  }
+
+  setDelugeLatest(latest) {
+    this.setState({delugeLatest: latest});
   }
 
   searchChanged(event) {
@@ -72,6 +77,8 @@ class App extends React.Component {
                                                engine={e}
                                                key={e.getID()}
                                                showError={showError}
+                                               deluge={{latest: this.state.delugeLatest,
+                                                        set: this.setDelugeLatest.bind(this)}}
                                              />)}
               </div>
             </div>

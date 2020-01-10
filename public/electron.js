@@ -3,8 +3,9 @@ const {shell, app, BrowserWindow} = require('electron')
 const path = require('path')
 const isDev = require('electron-is-dev')
 const {ipcMain} = require('electron');
-const {readDB, saveDB, magnetTopic} = require('./db');
+const {backupDB, readDB, saveDB, magnetTopic} = require('./db');
 
+backupDB();
 let db = readDB();
 let magnets = new Set(db.seen.map(mue => magnetTopic(mue.magnet)));
 let urls = new Set(db.seen.map(mue => mue.engine + ":" + mue.url));
