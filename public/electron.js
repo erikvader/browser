@@ -3,24 +3,41 @@ const {shell, app, BrowserWindow} = require('electron')
 const path = require('path')
 const isDev = require('electron-is-dev')
 const {ipcMain} = require('electron');
-const {backupDB, readDB, saveDB, magnetTopic} = require('./db');
+const dbjs = require('./db');
 
-backupDB();
-let db = readDB();
-let magnets = new Set(db.seen.map(mue => magnetTopic(mue.magnet)));
+let db = dbjs.readDB();
+let magnets = new Set(db.seen.map(mue => dbjs.magnetTopic(mue.magnet)));
 let urls = new Set(db.seen.map(mue => mue.engine + ":" + mue.url));
+
+global.delugeDirs = dbjs.getDelugeDirs();
+
+if (Object.entries(db.files).length === 0) {
+  // TODO: lock??
+  dbjs.findFilesIn(global.delugeDirs)
+    .then(files => {
+      db.files = files;
+    })
+    .catch(error => console.log(error));
+}
 
 ipcMain.on("addSeen", (event, magnet, url, engine) => {
   db.seen.add({magnet, url, engine});
-  magnets.add(magnetTopic(magnet));
+  magnets.add(dbjs.magnetTopic(magnet));
   urls.add(engine + ":" + url);
 });
 
 ipcMain.handle("hasSeen", (event, magnet, url, engine) => {
   let res = {magnet: false, url: false};
-  res.magnet = magnets.has(magnetTopic(magnet));
+  res.magnet = magnets.has(dbjs.magnetTopic(magnet));
   res.url = urls.has(engine + ":" + url);
   return res;
+});
+
+ipcMain.handle("hasSeenFile", (event, filename) => {
+  if (filename in db.files) {
+    return db.files[filename];
+  }
+  return [];
 });
 
 // Keep a global reference of the window object, if you don't, the window will
@@ -77,7 +94,8 @@ app.on('window-all-closed', function () {
   // On macOS it is common for applications and their menu bar
   // to stay active until the user quits explicitly with Cmd + Q
   // if (process.platform !== 'darwin')
-  saveDB(db);
+  dbjs.backupDB();
+  dbjs.saveDB(db);
   app.quit();
 })
 

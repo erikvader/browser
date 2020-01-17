@@ -7,7 +7,7 @@ function getChoices(latestChoice) {
   } else {
     choices.push([]);
   }
-  choices.push(window.delugeDirs);
+  choices.push(window.getGlobal('delugeDirs'));
   choices.push([openExternally]);
   return choices;
 }
