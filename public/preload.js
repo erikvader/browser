@@ -13,12 +13,17 @@ window.getGlobal = remote.getGlobal;
 window.fs = require("fs");
 
 // TODO: catch if magnet doesn't exist
-window.hasSeen = async function(t) {
-  return await ipcRenderer.invoke("hasSeen", t.magnet, t.url, t.engine);
+window.hasSeen = function(t) {
+  return ipcRenderer.sendSync("hasSeen", t.magnet, t.url, t.engine);
 }
 
 window.addSeen = function(t) {
-  ipcRenderer.send("addSeen", t.magnet, t.url, t.engine);
+  // TODO: run async??
+  ipcRenderer.sendSync("addSeen", t.magnet, t.url, t.engine);
 }
 
-// TODO: remove asSeen
+// TODO: add a remove asSeen
+
+window.hasSeenFile = function(filename) {
+  return ipcRenderer.sendSync("hasSeenFile", filename);
+}

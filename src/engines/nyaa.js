@@ -129,13 +129,13 @@ class Nyaa {
     }
     await new Promise(r => setTimeout(r, 2000))
 
-    let text = window.fs.readFileSync("nyaa_view2.html");
+    let text = window.fs.readFileSync("nyaa_view.html");
     let doc = this.parser.parseFromString(text, 'text/html');
 
     torrent.description = [sanitizeNode(doc.getElementById("torrent-description"))];
 
-    const rootfile = doc.getElementsByClassName("torrent-file-list")[0].firstElementChild.firstElementChild;
-    torrent.files = this.extractFiles(rootfile);
+    const rootfiles = doc.getElementsByClassName("torrent-file-list")[0].firstElementChild.children
+    torrent.files = Array.from(rootfiles, li => this.extractFiles(li));
 
     torrent.uploader = doc.body.children[1].children[0].children[1].children[1].children[1].innerText;
 

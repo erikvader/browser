@@ -149,3 +149,28 @@
 .theadDate {
     white-space: nowrap;
 }
+
+/* files *********************************************************************/
+
+.filesFolder {
+    color: blue;
+}
+
+.filesFile {
+}
+
+.filesMarked.filesFile {
+    background: lime;
+}
+
+.filesLocations {
+    display: none;
+}
+
+.filesFile.filesMarked:hover + .filesLocations {
+    display: initial;
+}
+
+.filesSize {
+    font-weight: bold;
+}

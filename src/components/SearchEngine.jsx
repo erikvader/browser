@@ -165,6 +165,9 @@ class TorrentView extends React.Component {
 
   date = memoize(date => new Date(date).toLocaleDateString("sv-SE"));
 
+  // TODO: också bero på en global counter
+  seenTorrentFiles = memoize(files => ({}));
+
   render() {
     const disabled = [
       this.props.torrent.description === null,
@@ -190,7 +193,10 @@ class TorrentView extends React.Component {
     if (this.state.tabSelected === 0) {
       selectedBody = <HtmlDisplayer tags={this.props.torrent.description} />;
     } else if (this.state.tabSelected === 1) {
-      selectedBody = <FileDisplayer files={this.props.torrent.files} />;
+      selectedBody = <FileDisplayer
+                       files={this.props.torrent.files}
+                       marked={this.seenTorrentFiles(this.props.torrent.files)}
+                     />;
     } else if (this.state.tabSelected === 2) {
       selectedBody = <CommentsDisplayer comments={this.props.torrent.comments} />;
     }
@@ -274,9 +280,53 @@ function HtmlDisplayer(props) {
 }
 
 function FileDisplayer(props) {
+  const indentAmount = 1;
+  let key = 0;
+
+  function stringify(f, indent, path) {
+    const indentStyle = {paddingLeft: `${indentAmount*indent}em`};
+
+    if (f.isFolder) {
+      const thingy = [
+        <div key={key++}
+             className={styles.filesFolder}
+             style={indentStyle}>
+          {f.name}/
+        </div>
+      ];
+      for (const c of f.children.map(c => stringify(c, indent + 1, path + f.name + "/"))) {
+        thingy.push(...c);
+      }
+      return thingy;
+    } else {
+      const myPath = path + f.name;
+      const marked = myPath in props.marked;
+      let thingy = [
+        <div key={key++}
+             className={styles.filesFile + " " + (marked ? styles.filesMarked : "")}
+             style={indentStyle}>
+          {f.name}
+          <span className={styles.filesSize}> ({f.size})</span>
+        </div>
+      ];
+
+      if (marked) {
+        thingy.push(
+          <div key={key++}
+               className={styles.filesLocations}>
+            {myPath}
+            props.marked[myPath]
+          </div>
+        );
+      }
+
+      return thingy;
+    }
+  }
+
   return (
     <div>
-      {JSON.stringify(props.files)}
+      {props.files.flatMap(f => stringify(f, 0, "/"))}
     </div>
   );
 }

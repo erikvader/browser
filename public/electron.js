@@ -26,18 +26,19 @@ ipcMain.on("addSeen", (event, magnet, url, engine) => {
   urls.add(engine + ":" + url);
 });
 
-ipcMain.handle("hasSeen", (event, magnet, url, engine) => {
+ipcMain.on("hasSeen", (event, magnet, url, engine) => {
   let res = {magnet: false, url: false};
   res.magnet = magnets.has(dbjs.magnetTopic(magnet));
   res.url = urls.has(engine + ":" + url);
-  return res;
+  event.returnValue = res;
 });
 
-ipcMain.handle("hasSeenFile", (event, filename) => {
+ipcMain.on("hasSeenFile", (event, filename) => {
   if (filename in db.files) {
-    return db.files[filename];
+    event.returnValue = db.files[filename];
+  } else {
+    event.returnValue = [];
   }
-  return [];
 });
 
 // Keep a global reference of the window object, if you don't, the window will
