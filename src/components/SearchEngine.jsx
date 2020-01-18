@@ -64,6 +64,10 @@ class SearchEngine extends React.Component {
   }
 
   render() {
+    const bodyClasses = [
+      styles.body,
+      this.state.folded ? styles.folded : ""
+    ].join(" ");
     return (
       <div className={styles.engine}>
         <div
@@ -78,8 +82,7 @@ class SearchEngine extends React.Component {
             {this.state.curPage} / {this.state.maxPage === null ? "?" : this.state.maxPage}
           </div>
         </div>
-        <div className={styles.body}
-             style={this.state.folded ? {display: "none"} : null}>
+        <div className={bodyClasses}>
           {this.state.maxPage === 0 && <div>There are no results</div>}
           {this.state.torrents.map((t, i) => <TorrentView
                                                key={i}
@@ -109,8 +112,6 @@ class TorrentView extends React.Component {
     this.state = {
       tabSelected: null
     };
-    this.descriptionRef = React.createRef();
-    this.headerRef = React.createRef();
     this.options = [
       "Description",
       "Files",
@@ -122,29 +123,12 @@ class TorrentView extends React.Component {
     this.setState(prev => prev.tabSelected === i ? {tabSelected: null} : {tabSelected: i});
   }
 
-  updateDescription() {
-    if (this.props.torrent.description !== null) {
-      this.descriptionRef.current.innerHTML = null;
-      for (const ele of this.props.torrent.description) {
-        this.descriptionRef.current.appendChild(ele);
-      }
-    }
-  }
-
-  componentDidMount() {
-    this.updateDescription();
-    // TODO: do i need to cleanup this?
-    this.headerRef.current.addEventListener("contextmenu", e => {
-      e.preventDefault();
-      this.createContextMenu(
-        this.props.torrent.magnet,
-        this.props.deluge.latest
-      ).popup(window.remote.getCurrentWindow());
-    }, false);
-  }
-
-  componentDidUpdate() {
-    this.updateDescription();
+  openContextMenu(e) {
+    e.preventDefault();
+    this.createContextMenu(
+      this.props.torrent.magnet,
+      this.props.deluge.latest
+    ).popup(window.remote.getCurrentWindow());
   }
 
   createContextMenu = memoize((magnet, latest) => {
@@ -202,9 +186,18 @@ class TorrentView extends React.Component {
     const noDetailsStyle = this.props.torrent.hasDetails ? " " : ` ${styles.noDetails} `;
     const clickableStyle = this.props.torrent.hasDetails ? " " : ` ${styles.titleClickable} `;
 
+    let selectedBody = null;
+    if (this.state.tabSelected === 0) {
+      selectedBody = <HtmlDisplayer tags={this.props.torrent.description} />;
+    } else if (this.state.tabSelected === 1) {
+      selectedBody = <FileDisplayer files={this.props.torrent.files} />;
+    } else if (this.state.tabSelected === 2) {
+      selectedBody = <CommentsDisplayer comments={this.props.torrent.comments} />;
+    }
+
     return (
       <div className={styles.torrent}>
-        <div className={styles.torrentHead + noDetailsStyle} ref={this.headerRef}>
+        <div className={styles.torrentHead + noDetailsStyle} onContextMenu={this.openContextMenu.bind(this)}>
           <div className={styles.theadTitle + clickableStyle} onClick={this.props.fetchDetails}>
             {spinner}
             {this.props.torrent.name}
@@ -245,7 +238,7 @@ class TorrentView extends React.Component {
         </div>
         <div className={styles.torrentBody + noDetailsStyle}
              style={this.state.tabSelected === null ? {display: "none"} : null}>
-          <div ref={this.descriptionRef}></div>
+          {selectedBody}
         </div>
       </div>
     );
@@ -265,6 +258,33 @@ function TorrEle(props) {
       <span className={styles.property}>
         {props.children}
       </span>
+    </div>
+  );
+}
+
+function HtmlDisplayer(props) {
+  const ref = React.useRef(null);
+  React.useLayoutEffect(() => {
+    ref.current.innerHTML = null;
+    for (const ele of props.tags) {
+      ref.current.appendChild(ele);
+    }
+  }, [props.tags]);
+  return (<div ref={ref}></div>);
+}
+
+function FileDisplayer(props) {
+  return (
+    <div>
+      {JSON.stringify(props.files)}
+    </div>
+  );
+}
+
+function CommentsDisplayer(props) {
+  return (
+    <div>
+      {JSON.stringify(props.comments)}
     </div>
   );
 }

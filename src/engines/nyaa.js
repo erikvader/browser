@@ -128,12 +128,56 @@ class Nyaa {
       throw new Error("torrent already has details");
     }
     await new Promise(r => setTimeout(r, 2000))
-    let text = window.fs.readFileSync("nyaa_view.html");
+
+    let text = window.fs.readFileSync("nyaa_view2.html");
     let doc = this.parser.parseFromString(text, 'text/html');
+
     torrent.description = [sanitizeNode(doc.getElementById("torrent-description"))];
+
+    const rootfile = doc.getElementsByClassName("torrent-file-list")[0].firstElementChild.firstElementChild;
+    torrent.files = this.extractFiles(rootfile);
+
+    torrent.uploader = doc.body.children[1].children[0].children[1].children[1].children[1].innerText;
+
+    torrent.comments = this.extractComments(doc);
+
     torrent.hasDetails = true;
     return torrent;
   }
+
+  extractFiles(li) {
+    const children = li.childNodes;
+    if (children.length === 5) {
+      return {
+        isFolder: true,
+        name: children[1].childNodes[1].nodeValue.trim(),
+        children: Array.from(children[3].children, x => this.extractFiles(x))
+      };
+    } else if (children.length === 3) {
+      return {
+        isFolder: false,
+        name: children[1].nodeValue.trim(),
+        size: children[2].innerText.slice(1, -1)
+      };
+    } else {
+      throw new Error("wrong number of children while extracting files");
+    }
+  }
+
+  extractComments(doc) {
+    const comments = doc.getElementById("comments").lastElementChild;
+    let asd = [];
+    for (const c of comments.children) {
+      let comm = {};
+      const body = c.firstElementChild;
+      comm.commenter = body.firstElementChild.firstElementChild.firstElementChild.innerText;
+      comm.comment = body.lastElementChild.lastElementChild.firstElementChild.innerText;
+      comm.date = parseInt(body.lastElementChild.firstElementChild.firstElementChild.firstElementChild.getAttribute("data-timestamp")) * 1000;
+      asd.push(comm);
+    }
+    return asd;
+  }
+
 }
 
 export default Nyaa;
