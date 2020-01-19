@@ -25,10 +25,47 @@ class Torrent {
       hasDetails: false,
 
       // set from file, don't set!
-      seen: false,
+      seenMagnet: null,
+      seenUrl: null,
+      seenFiles: null,
     };
     Object.assign(this, defaults, args);
+    this.fillSeen();
+    this.fillSeenFiles();
+  }
 
+  hasSeen() {
+    return this.seenMagnet !== null && this.seenUrl !== null;
+  }
+
+  fillSeen() {
+    const asd = window.hasSeen(this);
+    this.seenMagnet = asd.magnet;
+    this.seenUrl = asd.url;
+  }
+
+  hasSeenFiles() {
+    return this.seenFiles !== null;
+  }
+
+  fillSeenFiles() {
+    if (this.files !== null) {
+      let res = {};
+      function walk(path, f) {
+        if (f.isDir) {
+          walk(path + f.name + "/");
+        } else {
+          const locs = window.hasSeenFile(f.name);
+          if (locs.length !== 0) {
+            res[path + f.name] = locs;
+          }
+        }
+      }
+      for (const r of this.files) {
+        walk("/", r);
+      }
+      this.seenFiles = res;
+    }
   }
 
   clone() {

@@ -18,6 +18,7 @@ class SearchEngine extends React.Component {
 
   componentDidMount() {
     this.fetchMore();
+    // TODO: eventlistener för om filsystemsgrejen ändras
   }
 
   async fetchMore(event) {
@@ -26,6 +27,10 @@ class SearchEngine extends React.Component {
     this.setState({fetchingPages: true});
     try {
       const n = await this.props.engine.fetchNextPage();
+      n.forEach(t => {
+        t.fillSeen();
+        t.fillSeenFiles();
+      });
       this.setState(prev => ({
         torrents: [...prev.torrents, ...n],
         curPage: this.props.engine.getPage(),
@@ -55,11 +60,27 @@ class SearchEngine extends React.Component {
 
     let torrFilled = await this.props.engine.fetchDetails(torrCopy.clone());
     torrFilled.fetching = false;
+    torrFilled.fillSeen();
+    torrFilled.fillSeenFiles();
 
     this.setState(prev => {
       let tmp = prev.torrents.slice();
       tmp[i] = torrFilled;
       return {torrents: tmp};
+    });
+  }
+
+  markAsSeen(i, unmark) {
+    this.setState(prev => {
+      if (unmark) {
+        window.removeSeen(prev.torrents[i]);
+      } else {
+        window.addSeen(prev.torrents[i]);
+      }
+      let copy = prev.torrents.slice();
+      copy[i] = copy[i].clone();
+      copy[i].fillSeen();
+      return {torrents: copy};
     });
   }
 
@@ -88,6 +109,7 @@ class SearchEngine extends React.Component {
                                                key={i}
                                                torrent={t}
                                                fetchDetails={() => this.fetchDetails.call(this, i)}
+                                               markAsSeen={(unmark) => this.markAsSeen.call(this, i, unmark)}
                                                deluge={this.props.deluge}
                                              />)}
           <div className={styles.headNext}>
@@ -126,12 +148,12 @@ class TorrentView extends React.Component {
   openContextMenu(e) {
     e.preventDefault();
     this.createContextMenu(
-      this.props.torrent.magnet,
+      this.props.torrent,
       this.props.deluge.latest
     ).popup(window.remote.getCurrentWindow());
   }
 
-  createContextMenu = memoize((magnet, latest) => {
+  createContextMenu = memoize((torrent, latest) => {
     const createItem = dir => ({
       label: dir,
       click: () => {
@@ -143,30 +165,31 @@ class TorrentView extends React.Component {
     const menuItems = [
       {
         label: "Download (deluge)",
-        enabled: magnet !== null,
+        enabled: torrent.magnet !== null,
         submenu: deluge.getChoices(latest)
           .flatMap(l => [{type: "separator"}, ...l.map(createItem)])
           .slice(1)
       },
       {
         label: "Visit in browser",
-        click: () => window.remote.openExternal(this.props.torrent.baseUrl + this.props.torrent.url)
+        click: () => window.remote.openExternal(torrent.baseUrl + torrent.url)
       },
       {type: "separator"},
       {
-        label: "Mark as seen"
+        label: "Mark as seen",
+        enabled: (!torrent.seenMagnet || !torrent.seenUrl) && torrent.magnet !== null,
+        click: () => this.props.markAsSeen(false)
       },
       {
-        label: "Mark as unseen"
+        label: "Mark as unseen",
+        enabled: torrent.seenMagnet && torrent.seenUrl,
+        click: () => this.props.markAsSeen(true)
       }
     ];
     return window.remote.Menu.buildFromTemplate(menuItems);
   });
 
   date = memoize(date => new Date(date).toLocaleDateString("sv-SE"));
-
-  // TODO: också bero på en global counter
-  seenTorrentFiles = memoize(files => ({}));
 
   render() {
     const disabled = [
@@ -189,20 +212,26 @@ class TorrentView extends React.Component {
     const noDetailsStyle = this.props.torrent.hasDetails ? " " : ` ${styles.noDetails} `;
     const clickableStyle = this.props.torrent.hasDetails ? " " : ` ${styles.titleClickable} `;
 
+    const torrentClasses = [
+      styles.torrent,
+      this.props.torrent.seenMagnet ? "seenMagnet" : "",
+      this.props.torrent.seenUrl ? "seenUrl" : "",
+    ];
+
     let selectedBody = null;
     if (this.state.tabSelected === 0) {
       selectedBody = <HtmlDisplayer tags={this.props.torrent.description} />;
     } else if (this.state.tabSelected === 1) {
       selectedBody = <FileDisplayer
                        files={this.props.torrent.files}
-                       marked={this.seenTorrentFiles(this.props.torrent.files)}
+                       marked={this.props.torrent.seenFiles}
                      />;
     } else if (this.state.tabSelected === 2) {
       selectedBody = <CommentsDisplayer comments={this.props.torrent.comments} />;
     }
 
     return (
-      <div className={styles.torrent}>
+      <div className={torrentClasses.join(" ")}>
         <div className={styles.torrentHead + noDetailsStyle} onContextMenu={this.openContextMenu.bind(this)}>
           <div className={styles.theadTitle + clickableStyle} onClick={this.props.fetchDetails}>
             {spinner}
@@ -300,7 +329,7 @@ function FileDisplayer(props) {
       return thingy;
     } else {
       const myPath = path + f.name;
-      const marked = myPath in props.marked;
+      const marked = props.marked !== null && myPath in props.marked;
       let thingy = [
         <div key={key++}
              className={styles.filesFile + " " + (marked ? styles.filesMarked : "")}

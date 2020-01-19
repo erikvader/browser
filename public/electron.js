@@ -21,17 +21,36 @@ if (Object.entries(db.files).length === 0) {
 }
 
 ipcMain.on("addSeen", (event, magnet, url, engine) => {
-  db.seen.add({magnet, url, engine});
+  // TODO: checka så att den inte redan finns?
+  db.seen.push({magnet, url, engine});
   magnets.add(dbjs.magnetTopic(magnet));
   urls.add(engine + ":" + url);
+  event.returnValue = null;
+});
+
+ipcMain.on("removeSeen", (event, magnet, url, engine) => {
+  const ind = db.seen.findIndex(s => s.magnet === magnet && s.url === url && s.engine === engine);
+  if (ind >= 0) {
+    db.seen.splice(ind, 1);
+    magnets.delete(dbjs.magnetTopic(magnet));
+    urls.delete(engine + ":" + url);
+  }
+  event.returnValue = null;
 });
 
 ipcMain.on("hasSeen", (event, magnet, url, engine) => {
   let res = {magnet: false, url: false};
-  res.magnet = magnets.has(dbjs.magnetTopic(magnet));
-  res.url = urls.has(engine + ":" + url);
+  if (magnet !== null) {
+    res.magnet = magnets.has(dbjs.magnetTopic(magnet));
+  }
+  if (url !== null) {
+    res.url = urls.has(engine + ":" + url);
+  }
   event.returnValue = res;
 });
+
+// TODO: rebuild file index
+// TODO: how to inte starta denna flera gånger?
 
 ipcMain.on("hasSeenFile", (event, filename) => {
   if (filename in db.files) {
