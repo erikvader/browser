@@ -28,3 +28,7 @@ window.removeSeen = function(t) {
 window.hasSeenFile = function(filename) {
   return ipcRenderer.sendSync("hasSeenFile", filename);
 }
+
+window.rebuildIndex = async function() {
+  await ipcRenderer.invoke("rebuildIndex");
+}

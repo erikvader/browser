@@ -3,6 +3,7 @@ import styles from './App.module.css';
 import SearchEngine from './SearchEngine';
 import Nyaa from '../engines/nyaa.js';
 import ErrorDisplay from './ErrorDisplay';
+import { BeatLoader } from 'react-spinners';
 
 // TODO: add a select for ordering
 class App extends React.Component {
@@ -18,8 +19,10 @@ class App extends React.Component {
       engineID: 0,
       search: "a", // TODO: remove this
       selectedEng: "nyaa.si",
-      delugeLatest: null
+      delugeLatest: null,
+      fileIndexButtonPressed: false,
     };
+    this.indexRebuiltEvent = new Event("fileIndexRebuilt");
   }
 
   setDelugeLatest(latest) {
@@ -38,6 +41,13 @@ class App extends React.Component {
     if (event.key === "Enter") {
       this.doSearch();
     }
+  }
+
+  async fileIndexPressed(event) {
+    this.setState({fileIndexButtonPressed: true});
+    await window.rebuildIndex();
+    this.setState({fileIndexButtonPressed: false});
+    window.dispatchEvent(this.indexRebuiltEvent);
   }
 
   // TODO: remove this
@@ -71,6 +81,11 @@ class App extends React.Component {
                   onKeyDown={this.handleKey.bind(this)}
                 />
                 <button onClick={this.doSearch.bind(this)}>search</button>
+                {this.state.fileIndexButtonPressed ?
+                 <BeatLoader size={7}/>
+                 :
+                 <button onClick={this.fileIndexPressed.bind(this)}>Rebuild file index</button>
+                }
               </div>
               <div>
                 {this.state.engines.map(e => <SearchEngine

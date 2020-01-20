@@ -14,11 +14,21 @@ class SearchEngine extends React.Component {
       fetchingPages: false,
       folded: false
     };
+    this.irh = this.indexRebuiltHandler.bind(this);
+  }
+
+  indexRebuiltHandler() {
+    console.log("hej");
+    // TODO: loopa igenom torrents och kör fillSeenFiles på alla if files !== null
   }
 
   componentDidMount() {
     this.fetchMore();
-    // TODO: eventlistener för om filsystemsgrejen ändras
+    window.addEventListener("fileIndexRebuilt", this.irh);
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener("fileIndexRebuilt", this.irh);
   }
 
   async fetchMore(event) {

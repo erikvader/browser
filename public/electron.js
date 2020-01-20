@@ -11,16 +11,27 @@ let urls = new Set(db.seen.map(mue => mue.engine + ":" + mue.url));
 
 global.delugeDirs = dbjs.getDelugeDirs();
 
+let isFindingLocalFiles = false;
+async function findAllLocalFiles() {
+  if (isFindingLocalFiles) return;
+  isFindingLocalFiles = true;
+  try {
+    db.files = await dbjs.findFilesIn(global.delugeDirs);
+  } catch (err) {
+    console.error(err);
+  } finally {
+    isFindingLocalFiles = false;
+  }
+}
+
 if (Object.entries(db.files).length === 0) {
-  // TODO: lock??
-  dbjs.findFilesIn(global.delugeDirs)
-    .then(files => {
-      db.files = files;
-    })
-    .catch(error => console.log(error));
+  findAllLocalFiles();
 }
 
 ipcMain.on("addSeen", (event, magnet, url, engine) => {
+  if (typeof magnet !== "string" || typeof url !== "string" || typeof engine !== "string") {
+    throw new Error(`can't addSeen on ${magnet}, ${url}, ${engine}`);
+  }
   // TODO: checka så att den inte redan finns?
   db.seen.push({magnet, url, engine});
   magnets.add(dbjs.magnetTopic(magnet));
@@ -49,8 +60,9 @@ ipcMain.on("hasSeen", (event, magnet, url, engine) => {
   event.returnValue = res;
 });
 
-// TODO: rebuild file index
-// TODO: how to inte starta denna flera gånger?
+ipcMain.handle("rebuildIndex", async (event) => {
+  await findAllLocalFiles();
+});
 
 ipcMain.on("hasSeenFile", (event, filename) => {
   if (filename in db.files) {
