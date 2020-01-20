@@ -232,8 +232,8 @@ class TorrentView extends React.Component {
 
     const torrentClasses = [
       styles.torrent,
-      this.props.torrent.seenMagnet ? "seenMagnet" : "",
-      this.props.torrent.seenUrl ? "seenUrl" : "",
+      this.props.torrent.seenMagnet ? styles.seenMagnet : "",
+      this.props.torrent.seenUrl ? styles.seenUrl : "",
     ];
 
     let selectedBody = null;
@@ -248,15 +248,15 @@ class TorrentView extends React.Component {
       selectedBody = <CommentsDisplayer comments={this.props.torrent.comments} />;
     }
 
+    const anyFileDownloaded = this.props.torrent.seenFiles !== null && Object.keys(this.props.torrent.seenFiles).length > 0;
+
     return (
       <div className={torrentClasses.join(" ")}>
         <div className={styles.torrentHead + noDetailsStyle}
              onContextMenu={this.openContextMenu.bind(this)}>
           <div className={styles.theadTitle + clickableStyle} onClick={this.props.fetchDetails}>
             {spinner}
-            <span style={this.props.torrent.color !== null ? {color: this.props.torrent.color} : null}>
-              {this.props.torrent.name}
-            </span>
+            {this.props.torrent.name}
           </div>
           <TorrEle className={styles.theadSeeders} label="Seeders">
             {this.props.torrent.seeders}/{this.props.torrent.leachers}
@@ -276,6 +276,9 @@ class TorrentView extends React.Component {
           <TorrEle className={styles.theadSize} label="Size">
             {this.props.torrent.size}
           </TorrEle>
+          {this.props.torrent.color !== null &&
+           <span className={styles.theadCircle} style={{backgroundColor: this.props.torrent.color}}></span>
+          }
           <div className={styles.tabbar}>
             {this.options.map((s, i) =>
                               <div
@@ -285,7 +288,9 @@ class TorrentView extends React.Component {
                                   this.state.tabSelected === i ?
                                     styles.selected : "",
                                   disabled[i] ?
-                                    styles.disabled : ""
+                                    styles.disabled : "",
+                                  i === 1 && anyFileDownloaded ?
+                                    styles.tabbarFilesDownloaded : "",
                                 ].join(" ")}>
                                 {s}
                               </div>)

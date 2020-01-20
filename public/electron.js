@@ -24,7 +24,7 @@ async function findAllLocalFiles() {
   }
 }
 
-if (Object.entries(db.files).length === 0) {
+if (Object.keys(db.files).length === 0) {
   findAllLocalFiles();
 }
 
