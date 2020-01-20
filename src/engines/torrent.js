@@ -17,6 +17,7 @@ class Torrent {
       files: null,
       comments: null,
       uploader: null,
+      color: null,
 
       // status variable, don't set this!
       fetching: false,

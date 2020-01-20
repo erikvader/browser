@@ -18,8 +18,16 @@ class SearchEngine extends React.Component {
   }
 
   indexRebuiltHandler() {
-    console.log("hej");
-    // TODO: loopa igenom torrents och kör fillSeenFiles på alla if files !== null
+    this.setState(prev => {
+      let torr = prev.torrents.slice();
+      for (let i = 0; i < torr.length; i++) {
+        if (torr[i].files !== null) {
+          torr[i] = torr[i].clone();
+          torr[i].fillSeenFiles();
+        }
+        return {torrents: torr};
+      }
+    });
   }
 
   componentDidMount() {
@@ -242,10 +250,13 @@ class TorrentView extends React.Component {
 
     return (
       <div className={torrentClasses.join(" ")}>
-        <div className={styles.torrentHead + noDetailsStyle} onContextMenu={this.openContextMenu.bind(this)}>
+        <div className={styles.torrentHead + noDetailsStyle}
+             onContextMenu={this.openContextMenu.bind(this)}>
           <div className={styles.theadTitle + clickableStyle} onClick={this.props.fetchDetails}>
             {spinner}
-            {this.props.torrent.name}
+            <span style={this.props.torrent.color !== null ? {color: this.props.torrent.color} : null}>
+              {this.props.torrent.name}
+            </span>
           </div>
           <TorrEle className={styles.theadSeeders} label="Seeders">
             {this.props.torrent.seeders}/{this.props.torrent.leachers}
@@ -353,8 +364,7 @@ function FileDisplayer(props) {
         thingy.push(
           <div key={key++}
                className={styles.filesLocations}>
-            {myPath}
-            props.marked[myPath]
+            {props.marked[myPath].flatMap((d, i) => [d, <br key={i} />])}
           </div>
         );
       }

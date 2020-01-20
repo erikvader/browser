@@ -100,6 +100,15 @@ class Nyaa {
     let torrents = [];
     for (const row of trs) {
       let info = {};
+      if (row.classList.contains("success")) {
+        // green colored, ie trusted
+        info.color = "rgb(60, 206, 0)"; // opacity 0.12 eller 0.18 på faktiska sidan
+      } else if (row.classList.contains("danger")) {
+        // orange colored, batch? reupload?
+        // info.color = "rgb(208, 0, 0)";
+        info.color = "#ff8000";
+      }
+
       info.category = row.children[0].firstElementChild.title;
 
       const col1 = row.children[1].lastElementChild;
