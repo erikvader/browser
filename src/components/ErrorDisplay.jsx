@@ -1,5 +1,6 @@
 import React from 'react';
 import styles from './ErrorDisplay.module.css';
+import 'animate.css';
 
 class ErrorDisplay extends React.Component {
   constructor(props) {
@@ -12,14 +13,20 @@ class ErrorDisplay extends React.Component {
   }
 
   render() {
+    const classes = [
+      styles.Error,
+      "animated",
+      "shake"
+    ].join(" ");
+
     return (
-      <div>
-        {this.state.error !== null && <div className={styles.Error}>
+      <>
+        {this.state.error !== null && <div className={classes}>
                                         <button className={styles.button} onClick={() => this.showError()}>X</button>
                                         {this.state.error.toString()}
                                       </div>}
         {this.props.children(this.showError.bind(this))}
-      </div>
+      </>
     );
   }
 }

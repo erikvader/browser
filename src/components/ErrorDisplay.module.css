@@ -1,7 +1,12 @@
 .Error {
     background: red;
     padding: 0.5em;
-    position: relative;
+    position: sticky;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+    box-sizing: border-box;
 }
 
 .button {

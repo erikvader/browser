@@ -2,6 +2,8 @@ import React from 'react';
 import { BeatLoader } from 'react-spinners';
 import styles from './SearchEngine.module.css';
 import memoize from 'memoize-one';
+import 'animate.css';
+import closeIcon from '../icons/close.svg';
 
 class SearchEngine extends React.Component {
   constructor(props) {
@@ -13,6 +15,7 @@ class SearchEngine extends React.Component {
       fetchingPages: false,
       folded: false
     };
+    this.engineRef = React.createRef();
     this.irh = this.indexRebuiltHandler.bind(this);
   }
 
@@ -101,24 +104,42 @@ class SearchEngine extends React.Component {
     });
   }
 
+  fold() {
+    this.setState(prev => {
+      // if retracting and we have scrolled far enough down
+      if (!prev.folded && this.engineRef.current.getBoundingClientRect().y < 0) {
+        window.scrollTo(0, this.engineRef.current.offsetTop);
+      }
+      return {folded: !prev.folded};
+    });
+  }
+
   render() {
     const bodyClasses = [
       styles.body,
       this.state.folded ? styles.folded : ""
     ].join(" ");
+
     return (
-      <div className={styles.engine}>
+      <div className={styles.engine} ref={this.engineRef}>
         <div
           className={styles.head}
-          onClick={() => this.setState(prev => ({folded: !prev.folded}))}
+          onClick={this.fold.bind(this)}
           style={{background: this.props.engine.getBackground()}}
         >
           <div className={styles.headName}>{this.props.engine.getName()}</div>
-          <div className={styles.headSearch}>search: {this.props.engine.getSearch()}</div>
-          <div className={styles.headOrdering}>ordering: {this.props.engine.getOrdering()}</div>
+          <div className={styles.headSearch}>Search: {this.props.engine.getSearch()}</div>
+          <div className={styles.headOrdering}>Ordering: {this.props.engine.getOrdering()}</div>
           <div className={styles.headPage}>
             {this.state.curPage} / {this.state.maxPage === null ? "?" : this.state.maxPage}
           </div>
+          <img className={styles.headClose}
+               onClick={e => {
+                 e.stopPropagation();
+                 this.props.remove();
+               }}
+               src={closeIcon}
+               alt="×" />
         </div>
         <div className={bodyClasses}>
           {this.state.maxPage === 0 && <div>There are no results</div>}
@@ -251,6 +272,8 @@ class TorrentView extends React.Component {
       styles.torrent,
       this.props.torrent.seenMagnet ? styles.seenMagnet : "",
       this.props.torrent.seenUrl ? styles.seenUrl : "",
+      "animated",
+      "fadeIn"
     ];
 
     let selectedBody = null;

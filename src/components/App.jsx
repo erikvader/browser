@@ -25,6 +25,14 @@ class App extends React.Component {
     this.indexRebuiltEvent = new Event("fileIndexRebuilt");
   }
 
+  removeEngine(i) {
+    this.setState(prev => {
+      const eng = prev.engines.slice();
+      eng.splice(i, 1);
+      return {engines: eng};
+    });
+  }
+
   setDelugeLatest(latest) {
     this.setState({delugeLatest: latest});
   }
@@ -88,13 +96,14 @@ class App extends React.Component {
                 }
               </div>
               <div>
-                {this.state.engines.map(e => <SearchEngine
-                                               engine={e}
-                                               key={e.getID()}
-                                               showError={showError}
-                                               deluge={{latest: this.state.delugeLatest,
-                                                        set: this.setDelugeLatest.bind(this)}}
-                                             />)}
+                {this.state.engines.map((e, i) => <SearchEngine
+                                                    engine={e}
+                                                    key={e.getID()}
+                                                    showError={showError}
+                                                    deluge={{latest: this.state.delugeLatest,
+                                                             set: this.setDelugeLatest.bind(this)}}
+                                                    remove={() => this.removeEngine(i)}
+                                                  />)}
               </div>
             </div>
         }

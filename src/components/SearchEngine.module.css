@@ -13,6 +13,7 @@
     justify-content: space-between;
     cursor: pointer;
     z-index: 999;
+    vertical-align: middle;
 }
 
 .body {
@@ -40,6 +41,16 @@
 
 .headNext {
     text-align: center;
+}
+
+.headClose {
+    height: 1em;
+    cursor: pointer;
+    transition: transform 100ms linear;
+}
+
+.headClose:hover {
+    transform: rotate(360deg);
 }
 
 /* torrent *******************************************************************/

@@ -13,6 +13,27 @@ let db = dbjs.readDB();
 let magnets = new Set(db.seen.map(mue => dbjs.magnetTopic(mue.magnet)));
 let urls = new Set(db.seen.map(mue => mue.engine + ":" + mue.url));
 
+let dbTimeout = null;
+let firstSave = true;
+
+function saveDB() {
+  if (firstSave) {
+    dbjs.backupDB();
+    firstSave = false;
+  }
+  dbjs.saveDB(db);
+}
+
+function setAsDirty() {
+  if (dbTimeout !== null) {
+    clearTimeout(dbTimeout);
+  }
+  dbTimeout = setTimeout(() => {
+    saveDB();
+    dbTimeout = null;
+  }, 1000*60);
+}
+
 global.delugeDirs = dbjs.getDelugeDirs();
 
 let isFindingLocalFiles = false;
@@ -21,6 +42,7 @@ async function findAllLocalFiles() {
   isFindingLocalFiles = true;
   try {
     db.files = await dbjs.findFilesIn(global.delugeDirs);
+    setAsDirty();
   } catch (err) {
     console.error(err);
   } finally {
@@ -38,6 +60,7 @@ ipcMain.on("addSeen", (event, magnet, url, engine) => {
   }
   // TODO: checka så att den inte redan finns?
   db.seen.push({magnet, url, engine});
+  setAsDirty();
   magnets.add(dbjs.magnetTopic(magnet));
   urls.add(engine + ":" + url);
   event.returnValue = null;
@@ -47,6 +70,7 @@ ipcMain.on("removeSeen", (event, magnet, url, engine) => {
   const ind = db.seen.findIndex(s => s.magnet === magnet && s.url === url && s.engine === engine);
   if (ind >= 0) {
     db.seen.splice(ind, 1);
+    setAsDirty();
     magnets.delete(dbjs.magnetTopic(magnet));
     urls.delete(engine + ":" + url);
   }
@@ -130,8 +154,7 @@ app.on('window-all-closed', function () {
   // On macOS it is common for applications and their menu bar
   // to stay active until the user quits explicitly with Cmd + Q
   // if (process.platform !== 'darwin')
-  dbjs.backupDB();
-  dbjs.saveDB(db);
+  saveDB();
   app.quit();
 })
 
