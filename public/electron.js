@@ -4,6 +4,10 @@ const path = require('path')
 const isDev = require('electron-is-dev')
 const {ipcMain} = require('electron');
 const dbjs = require('./db');
+const {Deluge} = require('./deluge');
+
+const deluge = new Deluge();
+ipcMain.handle("delugeDownload", async (event, magnet, dir) => await deluge.download(magnet, dir));
 
 let db = dbjs.readDB();
 let magnets = new Set(db.seen.map(mue => dbjs.magnetTopic(mue.magnet)));

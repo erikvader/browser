@@ -1,7 +1,6 @@
 import React from 'react';
 import { BeatLoader } from 'react-spinners';
 import styles from './SearchEngine.module.css';
-import deluge from '../torrent_client/deluge.js';
 import memoize from 'memoize-one';
 
 class SearchEngine extends React.Component {
@@ -129,6 +128,7 @@ class SearchEngine extends React.Component {
                                                fetchDetails={() => this.fetchDetails.call(this, i)}
                                                markAsSeen={(unmark) => this.markAsSeen.call(this, i, unmark)}
                                                deluge={this.props.deluge}
+                                               showError={this.props.showError}
                                              />)}
           <div className={styles.headNext}>
             <BeatLoader size={7} loading={this.state.fetchingPages} />
@@ -172,19 +172,36 @@ class TorrentView extends React.Component {
   }
 
   createContextMenu = memoize((torrent, latest) => {
+    const openExternally = "Open Externally";
     const createItem = dir => ({
       label: dir,
-      click: () => {
-        const newChoice = deluge.download(latest, dir);
-        if (newChoice !== null) this.props.deluge.set(newChoice);
-        // TODO: mark as seen
+      click: async () => {
+        if (dir === openExternally) {
+          window.remote.openExternal(torrent.magnet);
+        } else {
+          try {
+            await window.delugeDownload(torrent.magnet, dir);
+          } catch (err) {
+            this.props.showError("Couldn't download, is deluge running?");
+            console.error("window.delugeDownload said: ", err);
+            return;
+          }
+          this.props.deluge.set(dir);
+        }
+        this.props.markAsSeen(false);
       }
     });
+    const downloadSubmenu = [];
+    if (latest !== null) {
+      downloadSubmenu.push([latest]);
+    }
+    downloadSubmenu.push(window.getGlobal('delugeDirs'));
+    downloadSubmenu.push([openExternally]);
     const menuItems = [
       {
         label: "Download (deluge)",
         enabled: torrent.magnet !== null,
-        submenu: deluge.getChoices(latest)
+        submenu: downloadSubmenu
           .flatMap(l => [{type: "separator"}, ...l.map(createItem)])
           .slice(1)
       },
@@ -326,10 +343,7 @@ function TorrEle(props) {
 function HtmlDisplayer(props) {
   const ref = React.useRef(null);
   React.useLayoutEffect(() => {
-    ref.current.innerHTML = null;
-    for (const ele of props.tags) {
-      ref.current.appendChild(ele);
-    }
+    ref.current.innerHTML = props.tags;
   }, [props.tags]);
   return (<div ref={ref}></div>);
 }

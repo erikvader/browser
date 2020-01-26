@@ -141,7 +141,7 @@ class Nyaa {
     let text = window.fs.readFileSync("nyaa_view.html");
     let doc = this.parser.parseFromString(text, 'text/html');
 
-    torrent.description = [sanitizeNode(doc.getElementById("torrent-description"))];
+    torrent.description = sanitizeNode(doc.getElementById("torrent-description").outerHTML);
 
     const rootfiles = doc.getElementsByClassName("torrent-file-list")[0].firstElementChild.children
     torrent.files = Array.from(rootfiles, li => this.extractFiles(li));

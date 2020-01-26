@@ -32,3 +32,7 @@ window.hasSeenFile = function(filename) {
 window.rebuildIndex = async function() {
   await ipcRenderer.invoke("rebuildIndex");
 }
+
+window.delugeDownload = async function(magnet, dir) {
+  await ipcRenderer.invoke("delugeDownload", magnet, dir);
+}
